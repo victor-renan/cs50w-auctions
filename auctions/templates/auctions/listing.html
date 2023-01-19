@@ -1,0 +1,161 @@
+{% extends 'auctions/layout.html' %}
+{% load static %}
+
+{% block body %}
+
+    {% if listing %}
+    <section class="row m-0 w-100 justify-content-center overflow-hidden" style="width: fit-content; min-height: 500px;">
+        <div class="col-4 w-100 p-0" style="height: 500px;">
+            <img class="w-100 h-100" src="{{ listing.image_url }}" alt="{{ listing.image_url }}" style="object-fit: cover;">
+        </div>
+        <div class="d-flex w-100 flex-column col-5 p-4">
+            {% if listing.status == True %}
+                <h1 class="mb-2">{{ listing.title }}</h1>
+            {% else %}
+                <h1 class="mb-2"><b class="badge badge-lg badge-danger mr-2">CLOSED</b>{{ listing.title }}</h1>
+            {% endif %}
+            <h5 class="mb-3">{{ listing.card_description }}</h5>
+            <h6>Description:</h6>
+            <p class="mb-5">{{listing.description}}</p>
+            <span class="d-flex align-items-center mb-3 mt-auto">
+                <span class="col-4 p-0">
+                    {% if listing.status == True %}
+                        <h6>Starting bid (USD):</h6>
+                        <h1>${{ listing.starting_bid }}</h1>
+                    {% else %}
+                        {% for bid in most_valuable_bids %}
+                            {% if request.user == bid.user  %}
+                                <h6>Sold to <b class="badge badge-lg badge-success">YOU</b></h6>
+                            {% else %}
+                                <h6>Sold to <b class="badge badge-lg badge-success">{{ bid.user }}</b></h6>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+
+                </span>
+                <span class="col-6">
+                    {% if user.is_authenticated %}
+                        {% if listing.user != user %}
+                            {% if listing.status == True %}
+                                <h6>Place bid:</h6>
+                                <form class="d-flex" action="{% url 'listing' listing.id %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="number" class="form-control" step="0.01" 
+                                            name="user_bid" id="user_bid" placeholder="Place your bid here" required>
+                                    <input class="ml-2 btn btn-primary" type="submit" value="Submit">
+                                </form>
+                                {% if bid_error %}
+                                    <p class="mt-3 alert alert-danger">{{bid_error}}</p>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                        {% if bid_placed %}
+                            <p class="mt-3 alert alert-success">The bid was submited succefully!</p>
+                        {% endif %}
+                    {% endif %}
+                </span>
+            </span>
+            {% if listing.user == user %}
+            <p class="mb-2 p-0">Listed by <b>You</b> in <b>{{listing.posting_date}}</b>.</p>
+                {% if listing.status == True %}
+                <form method="post" action="{% url 'listing' listing.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="delete_listing" value="delete_listing">
+                    <input class="btn btn-danger btn-sm mb-0" type="submit" value="Delete listing">
+                </form>
+                {% endif %}
+            {% else %}
+            <p class="mb-2">Listed by <b>{{listing.user}}</b> in <b>{{listing.posting_date}}</b></p>
+                {% if listing.status == True %}
+                    {% if not listing_in_watchlist %}
+                    <form method="post" action="{% url 'listing' listing.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="add_to_watchlist" value="add_to_watchlist">
+                        <input class="btn btn-secondary btn-sm mb-0" type="submit" value="Add to watchlist">
+                    </form>
+                    {% else %}
+                        <p class="d-flex align-items-center alert alert-info p-2">The item is already in your watchlist. 
+                            <a class="btn btn-sm btn-info ml-auto" href="{% url 'watchlist' %}">See watchlist</a>
+                        </p>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        </div>
+    </section>
+    <section class="row mt-3 m-0 p-0 justify-content-center">
+        <div class="col-4 m-0 p-0">
+            <h3>Bids:</h3>
+            <ul class="overflow-scroll w-100 p-0 m-0" style="height: 150px; overflow: scroll;">
+                {% if bids %}
+                    {% for bid in bids %}
+                        <li><b class="badge badge-info mr-2">{{bid.date}}</b><b>{{bid.user}}</b>: ${{bid.value}};</li>
+                    {% endfor %}
+                {% else %}
+                    <li>Not bids yet.</li>
+                {% endif %}
+            </ul>
+        </div>
+        <div class="col-5 d-flex flex-column align-items-center">
+            {% if bids %}
+                {% if last_user_bids %}
+                    {% for bid in last_user_bids %}
+                        <p class="w-100 alert alert-info">Your bid: <b>${{bid.value}}</b></p>
+                        {% for most_valuable_bid in most_valuable_bids %}
+                            {% if bid.value == most_valuable_bid.value %}
+                                <p class="w-100 alert alert-success">Most valuable bid: <b>${{bid.value}}</b> by <b>You</b></p>
+                            {% else %}
+                                <p class="w-100 alert alert-warning">Most valuable bid: <b>${{most_valuable_bid.value}}</b> by <b>{{most_valuable_bid.user}}</b></p>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    {% for most_valuable_bid in most_valuable_bids %}
+                        <p class="w-100 alert alert-warning">Most valuable bid: <b>${{most_valuable_bid.value}}</b> by <b>{{most_valuable_bid.user}}</b></p>
+                    {% endfor %}
+                {% endif %}
+                {% if listing.user == user %}
+                    {% if most_valuable_bids %}
+                        {% for bid in most_valuable_bids %}
+                        <p class="alert alert-success">The most valuable bid is <b>${{bid.value}}</b>, by <b>{{bid.user}}</b></p>
+                            {% if listing.status == True %}
+                            <form method="post" action="{% url 'listing' listing.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="close_auction" id="close_auction" value="{{ bid.id }}">
+                                <input class="btn btn-primary" type="submit" value="Close auction">
+                            </form>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="alert alert-warning">You listing have'nt bids yet.</p>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        </div>
+    </section>
+    <hr class="col-9">
+    <section class="row m-0 p-0 justify-content-center">
+        <div class="col-4">
+            <h3 class="mb-3">Comments</h3>
+            {% if comments %}
+            <div class="w-100 d-flex flex-column" style="gap: 16px;">
+                {% for comment in comments %}
+                <div class="w-100 p-2 border rounded">
+                    <p class="mb-1"><b>{{comment.user}}</b>, {{comment.date}}</p>
+                    <p>{{comment.comment}}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-5">
+            <h3 class="mb-3">Type a comment</h3>
+            <form method="post" action="{% url 'listing' listing.id %}">
+                {% csrf_token %}
+                <textarea class="form-control mb-2" name="comment" id="comment" placeholder="Type a comment" style="height: 250px;"></textarea>
+                <input class="btn btn-primary px-4" type="submit" value="Send">
+            </form>
+        </div>
+    </section>
+    {% endif %}
+
+{% endblock %}

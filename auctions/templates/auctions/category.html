@@ -1,0 +1,26 @@
+{% extends 'auctions/layout.html' %}
+{% load static %}
+
+{% block body %}
+<h2 class="mb-4">{{ category }}</h2>
+    {% if category_items %}
+    <section class="d-flex" style="gap: 32px;">
+    {% for listing in category_items %}
+    <a href="{% url 'listing' listing.id %}" class="card text-dark overflow-hidden" style="width: fit-content;">
+        <div class="d-flex" style="width: 300px; height: 300px;">
+            <img class="w-100 h-100" style="object-fit: cover;"
+            src="{{ listing.image_url }}"
+            alt="{{ listing.image_description }}">
+        </div>
+        <div class="card-body" style="max-width: 300px;">
+            <h2 class="mb-2">${{ listing.starting_bid }}</h2>
+            <h4 class="card-title mb-0">{{ listing.title }}</h4>
+            <p class="card-text mb-0">{{ listing.card_description }}</p>
+        </div>
+    </a>
+    {% endfor %}
+    </section>
+    {% else %}
+    <p class="col-sm-3 alert alert-secondary">No items in this category!</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'auctions/layout.html' %}
+{% load static %}
+
+{% block body %}
+<main>
+    <h1 class="mb-5">Create a new listing</h1>
+    <form class="col col-sm-4" method="post" action="{% url 'create_listing' %}">
+        {% csrf_token %}
+        <label for="title">Title:</label>
+        <input class="form-control" type="text" name="title" id="title" placeholder="Type the title here" required>
+
+        <label for="card-description">Card description:</label>
+        <input class="form-control" type="text" name="card_description" id="card_description" placeholder="Type the card description here" required>
+
+        <label for="description">Description:</label>
+        <textarea class="form-control" style="resize:none;overflow:scroll;height:250px;" name="description" id="description" placeholder="Enter the description here"></textarea>
+
+        <label for="starting-bid">Starting bid (USD):</label>
+        <input class="form-control" type="number" step="0.01" name="starting_bid" id="starting_bid" placeholder="Type the starting bid here" required>
+
+        <label for="image-url">Image URL:</label>
+        <input class="form-control" type="url" name="image_url" id="image_url" placeholder="Type the image URL here" required>
+
+        <label for="category">Category:</label>
+        <select class="form-control" name="category" id="category" required>
+            {% for category in categories %}
+                <option value="{{ category.name }}">{{ category.name }}</option>
+            {% endfor %}
+        </select>
+        <input class="btn btn-success mt-3" type="submit" value="Create">
+    </form>
+</main>
+{% endblock %}
